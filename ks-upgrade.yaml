@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ks-upgrade
+  namespace: kubesphere-system
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - command:
+            - ks-upgrade
+            - --logtostderr
+            - --v=4
+          image: kubespheredev/ks-upgrade:latest
+          imagePullPolicy: Always
+          name: ks-upgrade
