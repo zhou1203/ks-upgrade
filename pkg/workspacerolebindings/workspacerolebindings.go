@@ -40,6 +40,9 @@ func (t *workspaceRoleBindingMigrateTask) Run() error {
 		if workspaceRole == "" {
 			continue
 		}
+		if workspaceRole == "regular" {
+			workspaceRole = "self-provisioner"
+		}
 		workspaceRole = fmt.Sprintf("%s-%s", workspace, workspaceRole)
 		for _, subject := range clusterRoleBinding.Subjects {
 			if subject.Kind == "User" {
