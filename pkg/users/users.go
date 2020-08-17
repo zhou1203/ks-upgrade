@@ -1,7 +1,6 @@
 package users
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/go-ldap/ldap"
@@ -11,7 +10,6 @@ import (
 	"k8s.io/klog"
 	"kubesphere.io/ks-upgrade/pkg/task"
 	"net/mail"
-	"strings"
 	"time"
 )
 
@@ -80,9 +78,9 @@ func (t *userMigrateTask) Run() error {
 			description := entry.GetAttributeValue(ldapAttributeDescription)
 			lang := entry.GetAttributeValue(ldapAttributePreferredLanguage)
 			createTimestamp, _ := time.Parse(ldapAttributeCreateTimestampLayout, entry.GetAttributeValue(ldapAttributeCreateTimestamp))
-			pwd, err := base64.StdEncoding.DecodeString(entry.GetAttributeValue(ldapAttributeUserPassword))
-			if err != nil || strings.HasPrefix(string(pwd), "{SSHA}") {
-				pwd = []byte(initialPassword)
+			pwd := entry.GetAttributeValue(ldapAttributeUserPassword)
+			if pwd == "" {
+				pwd = initialPassword
 			}
 			if _, err := mail.ParseAddress(email); err != nil {
 				email = ""
@@ -99,7 +97,7 @@ func (t *userMigrateTask) Run() error {
 					Email:             email,
 					Description:       description,
 					Lang:              lang,
-					EncryptedPassword: string(pwd),
+					EncryptedPassword: pwd,
 				}}
 			users = append(users, user)
 		}
