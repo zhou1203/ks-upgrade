@@ -7,6 +7,7 @@ spec:
   template:
     spec:
       restartPolicy: OnFailure
+      serviceAccount: kubesphere
       containers:
         - command:
             - ks-upgrade
