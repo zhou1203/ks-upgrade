@@ -1,6 +1,7 @@
 package role
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -11,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
-	"kubesphere.io/ks-upgrade/pkg/globalrolebindings"
 	"kubesphere.io/ks-upgrade/pkg/task"
 )
 
@@ -108,7 +108,7 @@ func (t *roleMigrateTask) Run() error {
 
 func (t *roleMigrateTask) migrateBuiltinRole() error {
 	absPath := fmt.Sprintf("%s/%s", iamPath, "globalrolebindings")
-	roleList := &globalrolebindings.GlobalRoleBindingList{}
+	roleList := &GlobalRoleBindingList{}
 	err := listRole(t.clientSet, absPath, "", roleList)
 	if err != nil {
 		return err
@@ -184,7 +184,7 @@ func (g *globalCustomRoleReCreator) Recreate() error {
 				}
 
 				// Creating a new custom role excluding the deprecated role templates.
-				newGlobalRole := &globalrolebindings.GlobalRole{
+				newGlobalRole := &GlobalRole{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "iam.kubesphere.io/v1alpha2",
 						Kind:       "GlobalRole",
@@ -200,7 +200,7 @@ func (g *globalCustomRoleReCreator) Recreate() error {
 				}
 
 				for _, a := range aggregateRoles {
-					roleTemplate := &globalrolebindings.GlobalRole{}
+					roleTemplate := &GlobalRole{}
 					err := listRole(g.client, path, a, roleTemplate)
 					if err != nil {
 						if errors.IsNotFound(err) {
@@ -399,7 +399,7 @@ func (w *customRoleReCreator) Recreate() error {
 }
 
 func deleteRole(clientSet *kubernetes.Clientset, path, name string) error {
-	_, err := clientSet.RESTClient().Delete().AbsPath(fmt.Sprintf("%s/%s", path, name)).DoRaw()
+	_, err := clientSet.RESTClient().Delete().AbsPath(fmt.Sprintf("%s/%s", path, name)).DoRaw(context.TODO())
 	if err != nil {
 		return err
 	}
@@ -413,7 +413,7 @@ func createRole(clientSet *kubernetes.Clientset, path, name string, body interfa
 	if err != nil {
 		return err
 	}
-	_, err = clientSet.RESTClient().Post().AbsPath(path).Body(marshal).DoRaw()
+	_, err = clientSet.RESTClient().Post().AbsPath(path).Body(marshal).DoRaw(context.TODO())
 	if err != nil {
 		return err
 	}
@@ -423,7 +423,7 @@ func createRole(clientSet *kubernetes.Clientset, path, name string, body interfa
 }
 
 func listRole(clientSet *kubernetes.Clientset, path, name string, output interface{}) error {
-	raw, err := clientSet.RESTClient().Get().AbsPath(fmt.Sprintf("%s/%s", path, name)).DoRaw()
+	raw, err := clientSet.RESTClient().Get().AbsPath(fmt.Sprintf("%s/%s", path, name)).DoRaw(context.TODO())
 	if err != nil {
 		return err
 	}
@@ -441,7 +441,7 @@ func updateRoleBindings(clientSet *kubernetes.Clientset, path, name string, body
 	if err != nil {
 		return err
 	}
-	_, err = clientSet.RESTClient().Put().AbsPath(fmt.Sprintf("%s/%s", path, name)).Body(marshal).DoRaw()
+	_, err = clientSet.RESTClient().Put().AbsPath(fmt.Sprintf("%s/%s", path, name)).Body(marshal).DoRaw(context.TODO())
 	if err != nil {
 		return err
 	}
