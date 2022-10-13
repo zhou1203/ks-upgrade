@@ -20,6 +20,14 @@ type GlobalRoleBinding struct {
 	RoleRef rbacv1.RoleRef `json:"roleRef" protobuf:"bytes,3,opt,name=roleRef"`
 }
 
+type GlobalRoleBindingList struct {
+	metav1.TypeMeta `json:",inline"`
+	// Standard object's metadata.
+	// +optional
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []GlobalRoleBinding `json:"items"`
+}
+
 type GlobalRole struct {
 	metav1.TypeMeta `json:",inline"`
 	// Standard object's metadata.
