@@ -1,6 +1,6 @@
 module kubesphere.io/ks-upgrade
 
-go 1.13
+go 1.16
 
 require (
 	github.com/go-ldap/ldap v3.0.3+incompatible

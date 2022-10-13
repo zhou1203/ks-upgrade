@@ -80,6 +80,12 @@ func NewRoleMigrateTask(k8sClient kubernetes.Interface) task.UpgradeTask {
 }
 
 func (t *roleMigrateTask) Run() error {
+	err := t.migrateBuiltinRole()
+	if err != nil {
+		klog.Error(err)
+		return err
+	}
+
 	// delete the deprecated global roles
 	for _, globalRole := range deleteGlobalRoleList {
 		err := t.deleteGlobalRole(globalRole)
@@ -97,6 +103,28 @@ func (t *roleMigrateTask) Run() error {
 		}
 	}
 
+	return nil
+}
+
+func (t *roleMigrateTask) migrateBuiltinRole() error {
+	absPath := fmt.Sprintf("%s/%s", iamPath, "globalrolebindings")
+	roleList := &globalrolebindings.GlobalRoleBindingList{}
+	err := listRole(t.clientSet, absPath, "", roleList)
+	if err != nil {
+		return err
+	}
+
+	for _, role := range roleList.Items {
+		if role.RoleRef.Name == "users-manager" || role.RoleRef.Name == "workspaces-manager" {
+			klog.Infof("change GlobalRoleBinding %s, modify the roleRef.name to platform-regular.", role.Name)
+			role.RoleRef.Name = "platform-regular"
+			err := updateRoleBindings(t.clientSet, absPath, role.Name, role)
+			if err != nil {
+				return err
+			}
+
+		}
+	}
 	return nil
 }
 
@@ -408,6 +436,19 @@ func listRole(clientSet *kubernetes.Clientset, path, name string, output interfa
 	return nil
 }
 
+func updateRoleBindings(clientSet *kubernetes.Clientset, path, name string, body interface{}) error {
+	marshal, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	_, err = clientSet.RESTClient().Put().AbsPath(fmt.Sprintf("%s/%s", path, name)).Body(marshal).DoRaw()
+	if err != nil {
+		return err
+	}
+	klog.Infof("update roleBinding %s", name)
+	return nil
+}
+
 func inSliceString(e string, slice []string) bool {
 	for _, s := range slice {
 		if s == e {
@@ -454,7 +495,7 @@ func isValidCustomRole(meta metav1.ObjectMeta, builtinRoles []string) bool {
 
 func getAggregationRoles(meta metav1.ObjectMeta) ([]string, error) {
 	roles := make([]string, 0)
-	err := json.Unmarshal([]byte(meta.Annotations["iam.kubesphere.io/aggregation-roles"]), roles)
+	err := json.Unmarshal([]byte(meta.Annotations["iam.kubesphere.io/aggregation-roles"]), &roles)
 	if err != nil {
 		return nil, err
 	}
