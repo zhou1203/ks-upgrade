@@ -12,7 +12,6 @@ env:
   # TODO: Change variable to your image's name.
   IMAGE_NAME: ks-upgrade
   IMAGE_REPO: kubespheredev
-  IMAGE_VERSION: latest
 
 jobs:
   push:
@@ -39,4 +38,5 @@ jobs:
         run: |
           IMAGE_ID=$IMAGE_REPO/$IMAGE_NAME
           echo IMAGE_ID=$IMAGE_ID
-          docker buildx build --platform linux/amd64,linux/arm64 .  --push --file Dockerfile --tag $IMAGE_ID:IMAGE_VERSION
+          IMAGE_VERSION=${GITHUB_REF#refs/*/}
+          docker buildx build --platform linux/amd64,linux/arm64 .  --push --file Dockerfile --tag $IMAGE_ID:$IMAGE_VERSION
